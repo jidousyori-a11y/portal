@@ -107,11 +107,64 @@
     text-align: center;
     line-height: 1.6;
   }
+  .reorder-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 0 0 16px;
+  }
+  .reorder-toolbar button {
+    font: inherit;
+    font-size: 12px;
+    padding: 6px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--card-bg);
+    color: var(--text);
+    cursor: pointer;
+  }
+  .reorder-toolbar button:hover {
+    border-color: var(--accent);
+  }
+  .reorder-toolbar button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .reorder-toolbar button.reorder-toolbar__toggle--active {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .reorder-toolbar__status {
+    font-size: 12px;
+    color: var(--muted);
+  }
+  body.reorder-mode .link-card {
+    cursor: grab;
+    pointer-events: none;
+  }
+  body.reorder-mode .link-list > li {
+    border-radius: 12px;
+    outline: 1px dashed transparent;
+  }
+  body.reorder-mode .link-list > li:hover {
+    outline-color: var(--accent);
+  }
+  .link-list > li.link-list__item--dragging {
+    opacity: 0.35;
+  }
 </style>
 </head>
 <body>
   <div class="page">
     <h1>AI_Experiment ポータル</h1>
+
+    <div class="reorder-toolbar">
+      <button type="button" id="reorderToggle">☰ 並び替えモード</button>
+      <button type="button" id="reorderSave">💾 保存</button>
+      <span class="reorder-toolbar__status" id="reorderStatus"></span>
+    </div>
 
     <h2>GitHub Pages版</h2>
     <ul class="link-list">
@@ -269,6 +322,16 @@
           <span class="link-arrow">›</span>
         </a>
       </li>
+      <li>
+        <a class="link-card" target="_blank" rel="noopener" href="holiday_planning/index.html">
+          <span class="link-icon">🗓️</span>
+          <span class="link-text">
+            <div class="link-title">休日計画</div>
+            <div class="link-desc">活動別タブで情報源・ToDo・メモを管理(静的ページ・サーバー起動不要)</div>
+          </span>
+          <span class="link-arrow">›</span>
+        </a>
+      </li>
     </ul>
 
     <p class="footnote">
@@ -279,5 +342,164 @@
       <strong>ローカルサーバ版: requires VPN connection from global IP.</strong>
     </p>
   </div>
+  <script>
+  // カードのドラッグ並べ替え + File System Access API での自己保存。
+  // 「GitHub Pages版」「ローカルアプリ」の各 <ul class="link-list"> を
+  // 独立して並べ替え可能にする(リスト間の移動は不可、リスト内のみ)。
+  // 保存はローカルの portal.html(R:\...\AI_Experiment\portal\portal.html)に
+  // 上書きする。公開ページ(GitHub Pages)に反映するには、保存後に別途
+  // git commit / push が必要(このスクリプトは自動化しない)。
+  // pc.html にも同じ仕組みを別途実装しているが、EXPECTED_FILENAME 以外は
+  // ほぼ同一のコード。挙動を変えるときは両方に反映すること。
+  (function () {
+    var EXPECTED_FILENAME = 'portal.html';
+    var SUPPORTS_FS = 'showOpenFilePicker' in window;
+    var fileHandle = null;
+    var dragSrc = null;
+
+    var toggleBtn = document.getElementById('reorderToggle');
+    var saveBtn = document.getElementById('reorderSave');
+    var statusEl = document.getElementById('reorderStatus');
+
+    if (!SUPPORTS_FS) {
+      statusEl.textContent = 'このブラウザは保存に対応していません(Chrome/Edge推奨)';
+      saveBtn.disabled = true;
+    }
+
+    function setStatus(text) {
+      statusEl.textContent = text;
+    }
+
+    function onDragStart(e) {
+      dragSrc = e.currentTarget;
+      e.dataTransfer.effectAllowed = 'move';
+      try { e.dataTransfer.setData('text/plain', ''); } catch (err) { /* Firefox互換用、失敗しても無視 */ }
+      dragSrc.classList.add('link-list__item--dragging');
+    }
+    function onDragOver(e) {
+      e.preventDefault();
+      var li = e.currentTarget;
+      if (!dragSrc || li === dragSrc || li.parentElement !== dragSrc.parentElement) return;
+      var rect = li.getBoundingClientRect();
+      var before = (e.clientY - rect.top) < rect.height / 2;
+      li.parentElement.insertBefore(dragSrc, before ? li : li.nextSibling);
+    }
+    function onDrop(e) {
+      e.preventDefault();
+    }
+    function onDragEnd(e) {
+      e.currentTarget.classList.remove('link-list__item--dragging');
+      dragSrc = null;
+    }
+
+    function forEachItem(fn) {
+      document.querySelectorAll('.link-list > li').forEach(fn);
+    }
+
+    function enableReorderMode() {
+      document.body.classList.add('reorder-mode');
+      toggleBtn.textContent = '✕ 並び替え終了';
+      toggleBtn.classList.add('reorder-toolbar__toggle--active');
+      forEachItem(function (li) {
+        li.setAttribute('draggable', 'true');
+        li.addEventListener('dragstart', onDragStart);
+        li.addEventListener('dragover', onDragOver);
+        li.addEventListener('drop', onDrop);
+        li.addEventListener('dragend', onDragEnd);
+      });
+      setStatus('カードをドラッグして並び替えてください。');
+    }
+
+    function disableReorderMode() {
+      document.body.classList.remove('reorder-mode');
+      toggleBtn.textContent = '☰ 並び替えモード';
+      toggleBtn.classList.remove('reorder-toolbar__toggle--active');
+      forEachItem(function (li) {
+        li.removeAttribute('draggable');
+        li.removeEventListener('dragstart', onDragStart);
+        li.removeEventListener('dragover', onDragOver);
+        li.removeEventListener('drop', onDrop);
+        li.removeEventListener('dragend', onDragEnd);
+      });
+    }
+
+    toggleBtn.addEventListener('click', function () {
+      if (document.body.classList.contains('reorder-mode')) {
+        disableReorderMode();
+      } else {
+        enableReorderMode();
+      }
+    });
+
+    function escapeRegExp(s) {
+      return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    function buildListBlock(ul) {
+      var items = Array.prototype.map.call(ul.querySelectorAll(':scope > li'), function (li) {
+        var clone = li.cloneNode(true);
+        clone.removeAttribute('draggable');
+        return '      ' + clone.outerHTML.trim();
+      });
+      return items.join('\n');
+    }
+
+    async function pickFile() {
+      var handles = await window.showOpenFilePicker({
+        types: [{ description: 'HTML', accept: { 'text/html': ['.html'] } }],
+      });
+      var handle = handles[0];
+      if (handle.name !== EXPECTED_FILENAME) {
+        throw new Error('選択したファイルが ' + EXPECTED_FILENAME + ' ではありません(' + handle.name + ')');
+      }
+      var perm = await handle.requestPermission({ mode: 'readwrite' });
+      if (perm !== 'granted') {
+        throw new Error('書き込み権限が許可されませんでした');
+      }
+      fileHandle = handle;
+    }
+
+    // ファイル全体は書き換えず、各 <h2>直後の<ul class="link-list">…</ul> ブロックだけを
+    // 現在のDOM順で置き換える(style・footnote など他の部分は無傷のまま)。
+    async function save() {
+      try {
+        setStatus('保存中...');
+        if (!fileHandle) {
+          setStatus(EXPECTED_FILENAME + ' を選択してください...');
+          await pickFile();
+        }
+        var file = await fileHandle.getFile();
+        var text = await file.text();
+
+        document.querySelectorAll('h2').forEach(function (h2) {
+          var ul = h2.nextElementSibling;
+          if (!ul || !ul.classList || !ul.classList.contains('link-list')) return;
+          var label = h2.textContent.trim();
+          var re = new RegExp('(<h2>' + escapeRegExp(label) + '</h2>\\s*<ul class="link-list">)([\\s\\S]*?)(</ul>)');
+          var block = '\n' + buildListBlock(ul) + '\n    ';
+          if (!re.test(text)) {
+            throw new Error('ファイル内に「' + label + '」のリストが見つかりませんでした(手動編集と競合している可能性があります)');
+          }
+          text = text.replace(re, function (m, open, _mid, close) {
+            return open + block + close;
+          });
+        });
+
+        var writable = await fileHandle.createWritable();
+        await writable.write(text);
+        await writable.close();
+        setStatus('保存しました(' + new Date().toLocaleTimeString('ja-JP') + ')。公開に反映するには git commit / push が必要です。');
+      } catch (err) {
+        if (err && err.name === 'AbortError') {
+          setStatus('');
+          return;
+        }
+        setStatus('保存に失敗しました: ' + (err && err.message ? err.message : String(err)));
+      }
+    }
+
+    saveBtn.addEventListener('click', save);
+  })();
+  </script>
 </body>
 </html>

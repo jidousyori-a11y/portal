@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>休日計画</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>%F0%9F%8C%B4</text></svg>" />
+<style>
+  :root {
+    --bg: #f6f5f2;
+    --panel: #ffffff;
+    --border: #e0ddd5;
+    --text: #2c2a26;
+    --text-sub: #706c62;
+    --accent: #a8763e;
+    --accent-soft: #f1e6d6;
+    --done: #8a9a7e;
+    --disabled-bg: #eceae6;
+    --disabled-text: #b3afa6;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06);
+    --canvas-accent: #4f8a6d;
+    --canvas-soft: #e3efe7;
+    --archive-accent: #5b6b8c;
+    --archive-soft: #e6e9f0;
+    --link-color: #2563eb;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+  }
+  header {
+    padding: 24px 20px 8px;
+    text-align: center;
+  }
+  header h1 {
+    margin: 0 0 4px;
+    font-size: 1.6rem;
+    letter-spacing: 0.05em;
+  }
+  header p {
+    margin: 0;
+    color: var(--text-sub);
+    font-size: 0.85rem;
+  }
+  .tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+    padding: 16px 12px 0;
+  }
+  .tab-btn {
+    padding: 10px 18px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    border-radius: 8px 8px 0 0;
+    cursor: pointer;
+    font-size: 0.95rem;
+    color: var(--text);
+    border-bottom: none;
+    transition: background 0.15s;
+  }
+  .tab-btn:hover:not(.disabled) { background: var(--accent-soft); }
+  .tab-btn.active {
+    background: var(--panel);
+    font-weight: bold;
+    border-color: var(--accent);
+    box-shadow: 0 -2px 0 var(--accent) inset;
+  }
+  .tab-btn.disabled {
+    background: var(--disabled-bg);
+    color: var(--disabled-text);
+    cursor: not-allowed;
+  }
+  .tab-btn.tab-canvas { color: var(--canvas-accent); }
+  .tab-btn.tab-canvas:hover:not(.disabled) { background: var(--canvas-soft); }
+  .tab-btn.tab-canvas.active {
+    border-color: var(--canvas-accent);
+    box-shadow: 0 -2px 0 var(--canvas-accent) inset;
+  }
+  .tab-btn.tab-archive { color: var(--archive-accent); }
+  .tab-btn.tab-archive:hover:not(.disabled) { background: var(--archive-soft); }
+  .tab-btn.tab-archive.active {
+    border-color: var(--archive-accent);
+    box-shadow: 0 -2px 0 var(--archive-accent) inset;
+  }
+  main {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 0 16px 60px;
+  }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 0 8px 8px 8px;
+    padding: 24px;
+    box-shadow: var(--shadow);
+  }
+  section.block {
+    margin-bottom: 28px;
+  }
+  section.block:last-child { margin-bottom: 0; }
+  section.block h2 {
+    font-size: 1.05rem;
+    margin: 0 0 12px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid var(--accent-soft);
+    color: var(--accent);
+  }
+  ul.link-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  ul.link-list li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 0;
+    border-bottom: 1px dashed var(--border);
+  }
+  ul.link-list li:last-child { border-bottom: none; }
+  ul.link-list a {
+    flex: 1;
+    min-width: 0;
+    color: var(--link-color);
+    text-decoration: none;
+    font-weight: 500;
+    overflow-wrap: anywhere;
+  }
+  ul.link-list a:hover { color: var(--accent); text-decoration: underline; }
+  ul.link-list .note {
+    display: block;
+    font-size: 0.78rem;
+    color: var(--text-sub);
+    margin-top: 2px;
+  }
+  .add-link-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 14px;
+  }
+  .add-link-row input {
+    flex: 1;
+    min-width: 160px;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.88rem;
+  }
+  .todo-item {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .todo-item:last-child { border-bottom: none; }
+  .todo-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .todo-row input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--accent);
+    flex-shrink: 0;
+  }
+  .todo-row label {
+    flex: 1;
+    cursor: pointer;
+    color: var(--link-color);
+  }
+  .todo-item.status-done .todo-row label {
+    text-decoration: line-through;
+    color: var(--done);
+  }
+  .todo-item.status-hold .todo-row label {
+    color: var(--text-sub);
+    font-style: italic;
+  }
+  .empty-note {
+    color: var(--text-sub);
+    font-size: 0.85rem;
+    font-style: italic;
+    margin: 6px 0;
+  }
+  .bulk-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 14px;
+  }
+  .bulk-btn {
+    padding: 7px 14px;
+    border: 1px solid var(--accent);
+    background: var(--accent-soft);
+    color: var(--accent);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.82rem;
+  }
+  .bulk-btn:hover:not(:disabled) {
+    background: var(--accent);
+    color: #fff;
+  }
+  .bulk-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .todo-comment {
+    margin-top: 6px;
+    margin-left: 26px;
+  }
+  .todo-comment input[type="text"] {
+    width: 100%;
+    padding: 6px 8px;
+    font-size: 0.85rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: #fbfaf8;
+    color: var(--text);
+  }
+  .todo-comment input[type="text"]::placeholder { color: #c2beb3; }
+  .add-todo {
+    display: flex;
+    gap: 8px;
+    margin-top: 14px;
+  }
+  .add-todo input[type="text"] {
+    flex: 1;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+  }
+  .add-todo button, .del-btn {
+    padding: 8px 14px;
+    border: none;
+    border-radius: 6px;
+    background: var(--accent);
+    color: #fff;
+    cursor: pointer;
+    font-size: 0.85rem;
+  }
+  .add-todo button:hover { opacity: 0.9; }
+  .del-btn {
+    background: transparent;
+    color: var(--text-sub);
+    padding: 2px 6px;
+    font-size: 0.9rem;
+  }
+  .del-btn:hover { color: #b04a4a; }
+  .todo-row .del-btn { margin-left: auto; }
+  textarea.free-comment {
+    width: 100%;
+    min-height: 100px;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 0.9rem;
+    resize: vertical;
+    background: #fbfaf8;
+    color: var(--text);
+  }
+  .save-hint {
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--text-sub);
+    margin-top: 30px;
+  }
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid var(--accent-soft);
+    padding-bottom: 6px;
+    margin-bottom: 14px;
+  }
+  .section-header h2 {
+    border-bottom: none;
+    padding-bottom: 0;
+    margin: 0;
+  }
+  .btn-primary {
+    padding: 8px 14px;
+    border: none;
+    border-radius: 6px;
+    background: var(--accent);
+    color: #fff;
+    cursor: pointer;
+    font-size: 0.85rem;
+  }
+  .btn-primary:hover { opacity: 0.9; }
+  .plan-card {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 14px;
+    background: #fbfaf8;
+  }
+  .plan-card:last-child { margin-bottom: 0; }
+  .plan-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .plan-title {
+    font-weight: 700;
+    color: var(--accent);
+  }
+  .plan-select-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+  }
+  .plan-select {
+    flex: 1;
+    min-width: 140px;
+    padding: 7px 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: #fff;
+    color: var(--text);
+    font-size: 0.88rem;
+  }
+  .plan-select:disabled {
+    background: var(--disabled-bg);
+    color: var(--disabled-text);
+  }
+  .plan-free-text {
+    min-height: 70px;
+  }
+  .archive-card {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 14px;
+    background: #fbfaf8;
+  }
+  .archive-card:last-child { margin-bottom: 0; }
+  .archive-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .archive-date {
+    font-size: 0.8rem;
+    color: var(--text-sub);
+    font-weight: 600;
+  }
+  .archive-general-note {
+    font-size: 0.9rem;
+    margin: 0 0 10px;
+    white-space: pre-wrap;
+  }
+  .archive-plan {
+    margin-bottom: 10px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--border);
+  }
+  .archive-plan:last-child { margin-bottom: 0; }
+  .archive-tags {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+  }
+  .archive-tag {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-size: 0.78rem;
+    font-weight: 700;
+  }
+  .archive-free-text {
+    font-size: 0.88rem;
+    margin: 0;
+    white-space: pre-wrap;
+    color: var(--text);
+  }
+  .archive-comment {
+    margin-top: 10px;
+    min-height: 60px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>休日計画</h1>
+  <p>活動別タブで情報源・ToDo・メモを管理</p>
+</header>
+
+<div class="tabs" id="tabBar"></div>
+
+<main>
+  <div class="panel" id="panelArea"></div>
+  <p class="save-hint">入力内容はこのブラウザ内（localStorage）に自動保存されます</p>
+</main>
+
+<script>
+const CATEGORIES = [
+  { id: "movie", label: "映画", enabled: true },
+  { id: "museum", label: "美術", enabled: true },
+  { id: "culture", label: "文化", enabled: true },
+  { id: "temple", label: "学芸", enabled: true },
+  { id: "outdoor", label: "体操", enabled: true },
+  { id: "home", label: "宅内", enabled: true },
+  { id: "visit", label: "訪問", enabled: true },
+];
+
+// Canvas / Archive are utility tabs, not activity categories, so kept separate
+// from CATEGORIES (which drives Canvas's own "タブから選ぶ" dropdown below).
+const UTILITY_TABS = [
+  { id: "canvas", label: "Canvas", enabled: true },
+  { id: "archive", label: "Archive", enabled: true },
+];
+
+// Canvas's listbox1 choices: all activity tabs (映画も含む)
+const CANVAS_CATEGORY_CHOICES = CATEGORIES;
+
+function emptyCategoryData() {
+  return { links: [], todos: [], freeComment: "" };
+}
+
+const DEFAULT_DATA = {
+  movie: {
+    links: [
+      { id: "l1", title: "鎌倉市川喜多映画記念館", url: "https://www.kawakita-film.or.jp/kamakura_museum.html" },
+      { id: "l2", title: "kino cinema 横浜みなとみらい", url: "https://kinocinema.jp/minatomirai/" },
+      { id: "l3", title: "港南台シネサロン", url: "https://www.konandai-birds.com/cinema/" },
+      { id: "l4", title: "横浜ブルク13", url: "https://tjoy.jp/yokohama_burg13" },
+      { id: "l5", title: "109シネマズ湘南", url: "https://109cinemas.net/shonan/" },
+    ],
+    todos: [
+      { id: "t1", text: "摩文仁", status: "todo", comment: "" },
+      { id: "t2", text: "コナンハイウェイ堕天使", status: "todo", comment: "" },
+      { id: "t3", text: "開戦前夜", status: "todo", comment: "" },
+      { id: "t4", text: "プラダを着た悪魔２", status: "todo", comment: "" },
+    ],
+    freeComment: "",
+  },
+  museum: emptyCategoryData(),
+  culture: emptyCategoryData(),
+  temple: emptyCategoryData(),
+  outdoor: emptyCategoryData(),
+  home: emptyCategoryData(),
+  visit: emptyCategoryData(),
+  canvas: {
+    generalNote: "",
+    plans: [],
+  },
+  archive: [],
+};
+
+const STORAGE_KEY = "holidayPlanningData";
+
+function loadData() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  let parsed;
+  if (!raw) {
+    parsed = JSON.parse(JSON.stringify(DEFAULT_DATA));
+  } else {
+    try {
+      parsed = JSON.parse(raw);
+    } catch (e) {
+      parsed = JSON.parse(JSON.stringify(DEFAULT_DATA));
+    }
+  }
+  // 各活動タブのデータ構造を保証する(新規タブ追加や旧バージョンのlocalStorageからの移行に対応)。
+  // links/todos/freeCommentはここから先ユーザーがUIで編集・保存するものなので、
+  // 既存の保存内容がある場合はそれを尊重し、コード側の初期値で上書きはしない。
+  CATEGORIES.forEach(c => {
+    if (!parsed[c.id]) {
+      parsed[c.id] = DEFAULT_DATA[c.id]
+        ? JSON.parse(JSON.stringify(DEFAULT_DATA[c.id]))
+        : emptyCategoryData();
+    }
+    if (!Array.isArray(parsed[c.id].links)) parsed[c.id].links = [];
+    if (!Array.isArray(parsed[c.id].todos)) parsed[c.id].todos = [];
+    if (parsed[c.id].freeComment === undefined) parsed[c.id].freeComment = "";
+    // Migrate old {done:boolean} items to {status:"todo"|"hold"|"done"}
+    parsed[c.id].todos.forEach(t => {
+      if (!t.status) t.status = t.done ? "done" : "todo";
+      if (t.comment === undefined) t.comment = "";
+    });
+  });
+  // Ensure canvas/archive exist for users whose localStorage predates this feature
+  if (!parsed.canvas) parsed.canvas = JSON.parse(JSON.stringify(DEFAULT_DATA.canvas));
+  if (!Array.isArray(parsed.canvas.plans)) parsed.canvas.plans = [];
+  if (parsed.canvas.generalNote === undefined) parsed.canvas.generalNote = "";
+  if (!Array.isArray(parsed.archive)) parsed.archive = [];
+  parsed.archive.forEach(entry => {
+    if (entry.comment === undefined) entry.comment = "";
+  });
+  return parsed;
+}
+
+let data = loadData();
+let activeTab = "movie";
+// Transient (not persisted) checkbox-selection state per category+corner, used for bulk actions
+const selection = {};
+function getSelectionSet(categoryId, status) {
+  if (!selection[categoryId]) selection[categoryId] = { todo: new Set(), hold: new Set(), done: new Set() };
+  return selection[categoryId][status];
+}
+
+function saveData() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function renderTabs() {
+  const bar = document.getElementById("tabBar");
+  bar.innerHTML = "";
+  const canvasTab = UTILITY_TABS.find(t => t.id === "canvas");
+  const archiveTab = UTILITY_TABS.find(t => t.id === "archive");
+  const orderedTabs = [canvasTab, ...CATEGORIES, archiveTab];
+  orderedTabs.forEach(cat => {
+    const btn = document.createElement("button");
+    let cls = "tab-btn" + (cat.id === activeTab ? " active" : "") + (cat.enabled ? "" : " disabled");
+    if (cat.id === "canvas") cls += " tab-canvas";
+    if (cat.id === "archive") cls += " tab-archive";
+    btn.className = cls;
+    btn.textContent = cat.label;
+    if (cat.enabled) {
+      btn.addEventListener("click", () => { activeTab = cat.id; render(); });
+    } else {
+      btn.disabled = true;
+    }
+    bar.appendChild(btn);
+  });
+}
+
+// Renders one ToDo corner (todo / hold / done) with checkbox selection,
+// per-item delete, per-item comment, and bulk move-to-status buttons.
+function createTodoGroupSection(categoryId, cat, status, title, bulkActions, showAddForm, rerenderFn) {
+  const section = document.createElement("section");
+  section.className = "block";
+  const h2 = document.createElement("h2");
+  h2.textContent = title;
+  section.appendChild(h2);
+
+  const selSet = getSelectionSet(categoryId, status);
+  const items = cat.todos.filter(t => t.status === status);
+  const wrap = document.createElement("div");
+
+  if (items.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "empty-note";
+    empty.textContent = "項目はありません";
+    wrap.appendChild(empty);
+  }
+
+  items.forEach(todo => {
+    const item = document.createElement("div");
+    item.className = "todo-item status-" + status;
+
+    const row = document.createElement("div");
+    row.className = "todo-row";
+
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.checked = selSet.has(todo.id);
+    cb.id = "cb-" + categoryId + "-" + status + "-" + todo.id;
+    cb.title = "選択（下のボタンで一括操作）";
+    cb.addEventListener("change", () => {
+      if (cb.checked) selSet.add(todo.id);
+      else selSet.delete(todo.id);
+      rerenderFn();
+    });
+
+    const label = document.createElement("label");
+    label.htmlFor = cb.id;
+    label.textContent = todo.text;
+
+    const delBtn = document.createElement("button");
+    delBtn.className = "del-btn";
+    delBtn.textContent = "✕";
+    delBtn.title = "削除";
+    delBtn.addEventListener("click", () => {
+      cat.todos = cat.todos.filter(t => t.id !== todo.id);
+      selSet.delete(todo.id);
+      saveData();
+      rerenderFn();
+    });
+
+    row.appendChild(cb);
+    row.appendChild(label);
+    row.appendChild(delBtn);
+
+    const commentWrap = document.createElement("div");
+    commentWrap.className = "todo-comment";
+    const commentInput = document.createElement("input");
+    commentInput.type = "text";
+    commentInput.placeholder = "コメント（例: 場所・日時・感想など）";
+    commentInput.value = todo.comment || "";
+    commentInput.addEventListener("input", () => {
+      todo.comment = commentInput.value;
+      saveData();
+    });
+    commentWrap.appendChild(commentInput);
+
+    item.appendChild(row);
+    item.appendChild(commentWrap);
+    wrap.appendChild(item);
+  });
+  section.appendChild(wrap);
+
+  if (bulkActions && bulkActions.length) {
+    const bulkRow = document.createElement("div");
+    bulkRow.className = "bulk-actions";
+    bulkActions.forEach(action => {
+      const btn = document.createElement("button");
+      btn.className = "bulk-btn";
+      btn.textContent = action.label;
+      btn.disabled = selSet.size === 0;
+      btn.addEventListener("click", () => {
+        cat.todos.forEach(t => {
+          if (selSet.has(t.id)) t.status = action.targetStatus;
+        });
+        selSet.clear();
+        saveData();
+        rerenderFn();
+      });
+      bulkRow.appendChild(btn);
+    });
+    section.appendChild(bulkRow);
+  }
+
+  if (showAddForm) {
+    const addRow = document.createElement("div");
+    addRow.className = "add-todo";
+    const addInput = document.createElement("input");
+    addInput.type = "text";
+    addInput.placeholder = "新しい候補を追加";
+    const addBtn = document.createElement("button");
+    addBtn.textContent = "追加";
+    const addFn = () => {
+      const val = addInput.value.trim();
+      if (!val) return;
+      cat.todos.push({ id: "t" + Date.now(), text: val, status: "todo", comment: "" });
+      addInput.value = "";
+      saveData();
+      rerenderFn();
+    };
+    addBtn.addEventListener("click", addFn);
+    addInput.addEventListener("keydown", e => { if (e.key === "Enter") addFn(); });
+    addRow.appendChild(addInput);
+    addRow.appendChild(addBtn);
+    section.appendChild(addRow);
+  }
+
+  return section;
+}
+
+function renderCategoryPanel(categoryId) {
+  const panel = document.getElementById("panelArea");
+  panel.innerHTML = "";
+  const cat = data[categoryId];
+  const rerender = () => renderCategoryPanel(categoryId);
+
+  // 情報源リンク集
+  const linkSection = document.createElement("section");
+  linkSection.className = "block";
+  linkSection.innerHTML = "<h2>情報源リンク集</h2>";
+
+  if (cat.links.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "empty-note";
+    empty.textContent = "リンクはまだありません";
+    linkSection.appendChild(empty);
+  }
+
+  const ul = document.createElement("ul");
+  ul.className = "link-list";
+  cat.links.forEach(link => {
+    const li = document.createElement("li");
+    const a = document.createElement("a");
+    a.href = link.url;
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+    a.textContent = link.title;
+    const delBtn = document.createElement("button");
+    delBtn.className = "del-btn";
+    delBtn.textContent = "✕";
+    delBtn.title = "削除";
+    delBtn.addEventListener("click", () => {
+      cat.links = cat.links.filter(l => l.id !== link.id);
+      saveData();
+      rerender();
+    });
+    li.appendChild(a);
+    li.appendChild(delBtn);
+    ul.appendChild(li);
+  });
+  linkSection.appendChild(ul);
+
+  const addLinkRow = document.createElement("div");
+  addLinkRow.className = "add-link-row";
+  const titleInput = document.createElement("input");
+  titleInput.type = "text";
+  titleInput.placeholder = "表示文言（必須）";
+  const urlInput = document.createElement("input");
+  urlInput.type = "url";
+  urlInput.placeholder = "URL（必須）";
+  const addLinkBtn = document.createElement("button");
+  addLinkBtn.className = "btn-primary";
+  addLinkBtn.textContent = "追加";
+  const addLinkFn = () => {
+    const urlVal = urlInput.value.trim();
+    const titleVal = titleInput.value.trim();
+    if (!titleVal) { alert("表示文言を入力してください。"); return; }
+    if (!urlVal) { alert("URLを入力してください。"); return; }
+    cat.links.push({ id: "l" + Date.now(), title: titleVal, url: urlVal });
+    titleInput.value = "";
+    urlInput.value = "";
+    saveData();
+    rerender();
+  };
+  addLinkBtn.addEventListener("click", addLinkFn);
+  urlInput.addEventListener("keydown", e => { if (e.key === "Enter") addLinkFn(); });
+  titleInput.addEventListener("keydown", e => { if (e.key === "Enter") addLinkFn(); });
+  addLinkRow.appendChild(titleInput);
+  addLinkRow.appendChild(urlInput);
+  addLinkRow.appendChild(addLinkBtn);
+  linkSection.appendChild(addLinkRow);
+
+  panel.appendChild(linkSection);
+
+  // ToDo / 保留ToDo / 済ToDo の3コーナー
+  panel.appendChild(createTodoGroupSection(categoryId, cat, "todo", "ToDo チェックリスト", [
+    { label: "保留にする", targetStatus: "hold" },
+    { label: "済にする", targetStatus: "done" },
+  ], true, rerender));
+
+  panel.appendChild(createTodoGroupSection(categoryId, cat, "hold", "保留ToDo", [
+    { label: "ToDoに戻す", targetStatus: "todo" },
+  ], false, rerender));
+
+  panel.appendChild(createTodoGroupSection(categoryId, cat, "done", "済ToDo", [
+    { label: "ToDoに戻す", targetStatus: "todo" },
+  ], false, rerender));
+
+  // フリーコメント欄
+  const freeSection = document.createElement("section");
+  freeSection.className = "block";
+  freeSection.innerHTML = "<h2>フリーコメント</h2>";
+  const textarea = document.createElement("textarea");
+  textarea.className = "free-comment";
+  textarea.placeholder = "自由にメモを書けます";
+  textarea.value = cat.freeComment || "";
+  textarea.addEventListener("input", () => {
+    cat.freeComment = textarea.value;
+    saveData();
+  });
+  freeSection.appendChild(textarea);
+  panel.appendChild(freeSection);
+}
+
+function formatDate(iso) {
+  try {
+    return new Date(iso).toLocaleString("ja-JP", {
+      year: "numeric", month: "2-digit", day: "2-digit",
+      hour: "2-digit", minute: "2-digit",
+    });
+  } catch (e) {
+    return iso;
+  }
+}
+
+function renderCanvasPanel() {
+  const panel = document.getElementById("panelArea");
+  panel.innerHTML = "";
+  const canvas = data.canvas;
+
+  // 総合雑記欄
+  const generalSection = document.createElement("section");
+  generalSection.className = "block";
+  generalSection.innerHTML = "<h2>総合雑記欄</h2>";
+  const generalTextarea = document.createElement("textarea");
+  generalTextarea.className = "free-comment";
+  generalTextarea.placeholder = "全体的なメモ・思いつきを自由に";
+  generalTextarea.value = canvas.generalNote || "";
+  generalTextarea.addEventListener("input", () => {
+    canvas.generalNote = generalTextarea.value;
+    saveData();
+  });
+  generalSection.appendChild(generalTextarea);
+  panel.appendChild(generalSection);
+
+  // 計画１、計画２…
+  const plansSection = document.createElement("section");
+  plansSection.className = "block";
+  const plansHeader = document.createElement("div");
+  plansHeader.className = "section-header";
+  const plansH2 = document.createElement("h2");
+  plansH2.textContent = "計画";
+  const addPlanBtn = document.createElement("button");
+  addPlanBtn.className = "btn-primary";
+  addPlanBtn.textContent = "＋ 計画を追加";
+  addPlanBtn.addEventListener("click", () => {
+    canvas.plans.push({ id: "p" + Date.now(), categoryId: "", todoId: "", freeText: "" });
+    saveData();
+    renderCanvasPanel();
+  });
+  plansHeader.appendChild(plansH2);
+  plansHeader.appendChild(addPlanBtn);
+  plansSection.appendChild(plansHeader);
+
+  if (canvas.plans.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "empty-note";
+    empty.textContent = "「＋ 計画を追加」で計画１から作成できます";
+    plansSection.appendChild(empty);
+  }
+
+  canvas.plans.forEach((plan, idx) => {
+    const card = document.createElement("div");
+    card.className = "plan-card";
+
+    const cardHeader = document.createElement("div");
+    cardHeader.className = "plan-card-header";
+    const title = document.createElement("span");
+    title.className = "plan-title";
+    title.textContent = "計画" + (idx + 1);
+    const delPlanBtn = document.createElement("button");
+    delPlanBtn.className = "del-btn";
+    delPlanBtn.textContent = "✕";
+    delPlanBtn.title = "この計画を削除";
+    delPlanBtn.addEventListener("click", () => {
+      canvas.plans = canvas.plans.filter(p => p.id !== plan.id);
+      saveData();
+      renderCanvasPanel();
+    });
+    cardHeader.appendChild(title);
+    cardHeader.appendChild(delPlanBtn);
+    card.appendChild(cardHeader);
+
+    const selectRow = document.createElement("div");
+    selectRow.className = "plan-select-row";
+
+    // リストボックス1: タブから選ぶ
+    const catSelect = document.createElement("select");
+    catSelect.className = "plan-select";
+    const catPlaceholder = document.createElement("option");
+    catPlaceholder.value = "";
+    catPlaceholder.textContent = "（タブを選択）";
+    catSelect.appendChild(catPlaceholder);
+    CANVAS_CATEGORY_CHOICES.forEach(c => {
+      const opt = document.createElement("option");
+      opt.value = c.id;
+      opt.textContent = c.label;
+      if (plan.categoryId === c.id) opt.selected = true;
+      catSelect.appendChild(opt);
+    });
+    catSelect.addEventListener("change", () => {
+      plan.categoryId = catSelect.value;
+      plan.todoId = "";
+      saveData();
+      renderCanvasPanel();
+    });
+
+    // リストボックス2: そのタブのToDoチェックリスト候補
+    const candidateTodos = (plan.categoryId && data[plan.categoryId] && Array.isArray(data[plan.categoryId].todos))
+      ? data[plan.categoryId].todos.filter(t => t.status === "todo")
+      : [];
+    const todoSelect = document.createElement("select");
+    todoSelect.className = "plan-select";
+    const todoPlaceholder = document.createElement("option");
+    todoPlaceholder.value = "";
+    todoPlaceholder.textContent = plan.categoryId
+      ? (candidateTodos.length ? "（ToDoを選択）" : "（このタブにToDoはありません）")
+      : "（先にタブを選択）";
+    todoSelect.appendChild(todoPlaceholder);
+    candidateTodos.forEach(t => {
+      const opt = document.createElement("option");
+      opt.value = t.id;
+      opt.textContent = t.text;
+      if (plan.todoId === t.id) opt.selected = true;
+      todoSelect.appendChild(opt);
+    });
+    todoSelect.disabled = !plan.categoryId || candidateTodos.length === 0;
+    todoSelect.addEventListener("change", () => {
+      plan.todoId = todoSelect.value;
+      const matched = candidateTodos.find(t => t.id === plan.todoId);
+      if (matched) plan.freeText = matched.comment || "";
+      saveData();
+      renderCanvasPanel();
+    });
+
+    selectRow.appendChild(catSelect);
+    selectRow.appendChild(todoSelect);
+    card.appendChild(selectRow);
+
+    // 自由記入欄
+    const freeTextArea = document.createElement("textarea");
+    freeTextArea.className = "free-comment plan-free-text";
+    freeTextArea.placeholder = "自由記入（ToDoを選ぶとコメントが転記されます。編集可）";
+    freeTextArea.value = plan.freeText || "";
+    freeTextArea.addEventListener("input", () => {
+      plan.freeText = freeTextArea.value;
+      saveData();
+    });
+    card.appendChild(freeTextArea);
+
+    plansSection.appendChild(card);
+  });
+
+  panel.appendChild(plansSection);
+
+  // Archiveボタン
+  const archiveActionSection = document.createElement("section");
+  archiveActionSection.className = "block";
+  const archiveBtn = document.createElement("button");
+  archiveBtn.className = "btn-primary";
+  archiveBtn.textContent = "📦 Archiveする（現在のCanvasを日付付きで保存し、空に戻す）";
+  archiveBtn.addEventListener("click", () => {
+    if (canvas.plans.length === 0 && !canvas.generalNote) {
+      alert("Canvasが空です。アーカイブする内容がありません。");
+      return;
+    }
+    if (!confirm("現在のCanvas内容を日付付きでアーカイブし、Canvasを空に戻します。よろしいですか？")) return;
+    archiveCanvas();
+  });
+  archiveActionSection.appendChild(archiveBtn);
+  panel.appendChild(archiveActionSection);
+}
+
+function archiveCanvas() {
+  const canvas = data.canvas;
+  const snapshot = {
+    id: "arc" + Date.now(),
+    archivedAt: new Date().toISOString(),
+    generalNote: canvas.generalNote || "",
+    // リストボックス1/2は選択された値(ラベル文字列)だけを焼き込む。
+    // タブ構成やToDo内容は今後変わりうるため、IDではなく確定済みの表示文字列として保存する。
+    plans: canvas.plans.map(p => {
+      const catInfo = CANVAS_CATEGORY_CHOICES.find(c => c.id === p.categoryId);
+      const todoList = (p.categoryId && data[p.categoryId] && Array.isArray(data[p.categoryId].todos))
+        ? data[p.categoryId].todos
+        : [];
+      const todoInfo = todoList.find(t => t.id === p.todoId);
+      return {
+        categoryLabel: catInfo ? catInfo.label : "",
+        todoText: todoInfo ? todoInfo.text : "",
+        freeText: p.freeText || "",
+      };
+    }),
+    comment: "", // アーカイブ後に追記する用のコメント欄
+  };
+  data.archive.unshift(snapshot);
+  data.canvas = { generalNote: "", plans: [] };
+  saveData();
+  renderCanvasPanel();
+}
+
+function renderArchivePanel() {
+  const panel = document.getElementById("panelArea");
+  panel.innerHTML = "";
+
+  const section = document.createElement("section");
+  section.className = "block";
+  section.innerHTML = "<h2>Archive（過去の計画Canvas）</h2>";
+
+  if (data.archive.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "empty-note";
+    empty.textContent = "アーカイブはまだありません";
+    section.appendChild(empty);
+  }
+
+  data.archive.forEach(entry => {
+    const card = document.createElement("div");
+    card.className = "archive-card";
+
+    const head = document.createElement("div");
+    head.className = "archive-card-header";
+    const dateSpan = document.createElement("span");
+    dateSpan.className = "archive-date";
+    dateSpan.textContent = formatDate(entry.archivedAt);
+    const delBtn = document.createElement("button");
+    delBtn.className = "del-btn";
+    delBtn.textContent = "✕";
+    delBtn.title = "このアーカイブを削除";
+    delBtn.addEventListener("click", () => {
+      if (!confirm("このアーカイブを削除します。よろしいですか？")) return;
+      data.archive = data.archive.filter(e => e.id !== entry.id);
+      saveData();
+      renderArchivePanel();
+    });
+    head.appendChild(dateSpan);
+    head.appendChild(delBtn);
+    card.appendChild(head);
+
+    if (entry.generalNote) {
+      const noteP = document.createElement("p");
+      noteP.className = "archive-general-note";
+      noteP.textContent = entry.generalNote;
+      card.appendChild(noteP);
+    }
+
+    entry.plans.forEach(p => {
+      const planBlock = document.createElement("div");
+      planBlock.className = "archive-plan";
+
+      const tagsRow = document.createElement("div");
+      tagsRow.className = "archive-tags";
+      if (p.categoryLabel) {
+        const tag1 = document.createElement("span");
+        tag1.className = "archive-tag";
+        tag1.textContent = p.categoryLabel;
+        tagsRow.appendChild(tag1);
+      }
+      if (p.todoText) {
+        const tag2 = document.createElement("span");
+        tag2.className = "archive-tag";
+        tag2.textContent = p.todoText;
+        tagsRow.appendChild(tag2);
+      }
+      if (tagsRow.children.length) planBlock.appendChild(tagsRow);
+
+      if (p.freeText) {
+        const freeP = document.createElement("p");
+        freeP.className = "archive-free-text";
+        freeP.textContent = p.freeText;
+        planBlock.appendChild(freeP);
+      }
+
+      card.appendChild(planBlock);
+    });
+
+    // 後から追記できるコメント欄
+    const commentTextarea = document.createElement("textarea");
+    commentTextarea.className = "free-comment archive-comment";
+    commentTextarea.placeholder = "あとからコメントを追記できます";
+    commentTextarea.value = entry.comment || "";
+    commentTextarea.addEventListener("input", () => {
+      entry.comment = commentTextarea.value;
+      saveData();
+    });
+    card.appendChild(commentTextarea);
+
+    section.appendChild(card);
+  });
+
+  panel.appendChild(section);
+}
+
+function render() {
+  renderTabs();
+  if (CATEGORIES.some(c => c.id === activeTab)) {
+    renderCategoryPanel(activeTab);
+  } else if (activeTab === "canvas") {
+    renderCanvasPanel();
+  } else if (activeTab === "archive") {
+    renderArchivePanel();
+  }
+}
+
+render();
+</script>
+
+</body>
+</html>
