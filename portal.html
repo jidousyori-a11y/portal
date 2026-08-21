@@ -15,6 +15,10 @@
     --muted: #767676;
     --border: #ddd;
     --accent: #2563eb;
+    /* 「リンク」タブのアプリカードの塗り分け(pc.htmlと同期、2026-08-20 追加)。用途別に色で分類。 */
+    --linkcard-green: #e1f3da;
+    --linkcard-gray: #e5e5e3;
+    --linkcard-cream: #faf3d6;
   }
   @media (prefers-color-scheme: dark) {
     :root {
@@ -24,6 +28,9 @@
       --muted: #9a9a9a;
       --border: #3a3a3a;
       --accent: #4f8cff;
+      --linkcard-green: #274526;
+      --linkcard-gray: #3a3a3a;
+      --linkcard-cream: #4a4426;
     }
   }
   * { box-sizing: border-box; }
@@ -77,6 +84,9 @@
   .link-card:hover {
     border-color: var(--accent);
   }
+  .link-card--green { background: var(--linkcard-green); }
+  .link-card--gray { background: var(--linkcard-gray); }
+  .link-card--cream { background: var(--linkcard-cream); }
   .link-icon {
     font-size: 18px;
     line-height: 1;
@@ -315,7 +325,7 @@
     <h2>ローカルアプリ(npm run dev)</h2>
     <ul class="link-list">
       <li>
-        <a class="link-card" target="_blank" rel="noopener" href="http://192.168.1.119:10501/">
+        <a class="link-card link-card--gray" target="_blank" rel="noopener" href="http://192.168.1.119:10501/">
           <span class="link-icon">📇</span>
           <span class="link-text">
             <div class="link-title">情報カード</div>
@@ -324,7 +334,7 @@
         </a>
       </li>
       <li>
-        <a class="link-card" target="_blank" rel="noopener" href="http://192.168.1.119:10502/">
+        <a class="link-card link-card--gray" target="_blank" rel="noopener" href="http://192.168.1.119:10502/">
           <span class="link-icon">🖼️</span>
           <span class="link-text">
             <div class="link-title">なんでも画像付きノート</div>
@@ -333,7 +343,7 @@
         </a>
       </li>
       <li>
-        <a class="link-card" target="_blank" rel="noopener" href="http://192.168.1.119:10509/">
+        <a class="link-card link-card--gray" target="_blank" rel="noopener" href="http://192.168.1.119:10509/">
           <span class="link-icon">🔤</span>
           <span class="link-text">
             <div class="link-title">Spa_English</div>
@@ -351,7 +361,7 @@
         </a>
       </li>
       <li>
-        <a class="link-card" target="_blank" rel="noopener" href="http://192.168.1.119:10505/">
+        <a class="link-card link-card--gray" target="_blank" rel="noopener" href="http://192.168.1.119:10505/">
           <span class="link-icon">📜</span>
           <span class="link-text">
             <div class="link-title">歴史年号アンキパン</div>
@@ -360,7 +370,7 @@
         </a>
       </li>
       <li>
-        <a class="link-card" target="_blank" rel="noopener" href="http://192.168.1.119:10508/">
+        <a class="link-card link-card--gray" target="_blank" rel="noopener" href="http://192.168.1.119:10508/">
           <span class="link-icon">🖋️</span>
           <span class="link-text">
             <div class="link-title">詩の鑑賞</div>
@@ -369,7 +379,7 @@
         </a>
       </li>
       <li>
-        <a class="link-card" target="_blank" rel="noopener" href="http://192.168.1.119:10506/">
+        <a class="link-card link-card--green" target="_blank" rel="noopener" href="http://192.168.1.119:10506/">
           <span class="link-icon">🗻</span>
           <span class="link-text">
             <div class="link-title">登山PDCAサイクル</div>
@@ -378,7 +388,7 @@
         </a>
       </li>
       <li>
-        <a class="link-card" target="_blank" rel="noopener" href="http://192.168.1.119:10507/">
+        <a class="link-card link-card--green" target="_blank" rel="noopener" href="http://192.168.1.119:10507/">
           <span class="link-icon">🎒</span>
           <span class="link-text">
             <div class="link-title">登山重量表</div>
@@ -387,7 +397,7 @@
         </a>
       </li>
       <li>
-        <a class="link-card" target="_blank" rel="noopener" href="http://192.168.1.119:10510/">
+        <a class="link-card link-card--gray" target="_blank" rel="noopener" href="http://192.168.1.119:10510/">
           <span class="link-icon">📻</span>
           <span class="link-text">
             <div class="link-title">Radioファイル管理</div>
@@ -396,7 +406,7 @@
         </a>
       </li>
       <li>
-        <a class="link-card" target="_blank" rel="noopener" href="http://192.168.1.119:10511/">
+        <a class="link-card link-card--cream" target="_blank" rel="noopener" href="http://192.168.1.119:10511/">
           <span class="link-icon"><svg viewBox="0 0 24 24" width="1em" height="1em" style="vertical-align:-0.15em;" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="4" width="22" height="16" rx="5" fill="#FF0000"/><path d="M10 8.5l6 3.5-6 3.5z" fill="#fff"/></svg></span>
           <span class="link-text">
             <div class="link-title">YouTube管理</div>
@@ -414,7 +424,7 @@
         </a>
       </li>
       <li>
-        <a class="link-card" target="_blank" rel="noopener" href="holiday_planning/index.html">
+        <a class="link-card link-card--cream" target="_blank" rel="noopener" href="holiday_planning/index.html">
           <span class="link-icon">🌴</span>
           <span class="link-text">
             <div class="link-title">休日計画</div>
@@ -423,7 +433,7 @@
         </a>
       </li>
       <li>
-        <a class="link-card" target="_blank" rel="noopener" href="http://192.168.1.119:10514/">
+        <a class="link-card link-card--cream" target="_blank" rel="noopener" href="http://192.168.1.119:10514/">
           <span class="link-icon">🎬</span>
           <span class="link-text">
             <div class="link-title">NHKガイド</div>
@@ -438,7 +448,7 @@
     <h2>GitHub Pages版</h2>
     <ul class="link-list">
       <li>
-        <a class="link-card" target="_blank" rel="noopener" href="https://jidousyori-a11y.github.io/InfoCard/">
+        <a class="link-card link-card--gray" target="_blank" rel="noopener" href="https://jidousyori-a11y.github.io/InfoCard/">
           <span class="link-icon">📇</span>
           <span class="link-text">
             <div class="link-title">情報カード</div>
@@ -447,7 +457,7 @@
         </a>
       </li>
       <li>
-        <a class="link-card" target="_blank" rel="noopener" href="https://jidousyori-a11y.github.io/Spa_English/">
+        <a class="link-card link-card--gray" target="_blank" rel="noopener" href="https://jidousyori-a11y.github.io/Spa_English/">
           <span class="link-icon">🔤</span>
           <span class="link-text">
             <div class="link-title">Spa_English</div>
@@ -456,7 +466,7 @@
         </a>
       </li>
       <li>
-        <a class="link-card" target="_blank" rel="noopener" href="https://jidousyori-a11y.github.io/HistoryYears/">
+        <a class="link-card link-card--gray" target="_blank" rel="noopener" href="https://jidousyori-a11y.github.io/HistoryYears/">
           <span class="link-icon">📜</span>
           <span class="link-text">
             <div class="link-title">歴史年号アンキパン</div>
@@ -465,7 +475,7 @@
         </a>
       </li>
       <li>
-        <a class="link-card" target="_blank" rel="noopener" href="https://jidousyori-a11y.github.io/Appreciate_Poems/">
+        <a class="link-card link-card--gray" target="_blank" rel="noopener" href="https://jidousyori-a11y.github.io/Appreciate_Poems/">
           <span class="link-icon">🖋️</span>
           <span class="link-text">
             <div class="link-title">詩の鑑賞</div>
